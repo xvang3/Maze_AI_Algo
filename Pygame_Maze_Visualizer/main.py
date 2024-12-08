@@ -8,7 +8,13 @@ from controls import draw_controls, init_controls
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, CELL_SIZE, INITIAL_DELAY
 
 def select_algorithm(screen, font):
-    """Display a selection menu for algorithms and return the selected one."""
+    """Display a selection menu for algorithms with a background image and return the selected one."""
+
+    # Load and scale the background image
+    background_path = "images/maze1.png"
+    background_image = pygame.image.load(background_path)
+    background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
     algorithms = ["BFS", "DFS", "Heuristic", "A*"]
     buttons = []
     for i, algo in enumerate(algorithms):
@@ -20,8 +26,13 @@ def select_algorithm(screen, font):
 
     selected = None
     while selected is None:
-        screen.fill((255, 255, 255))
+        # Draw the background image
+        screen.blit(background_image, (0, 0))
+
+        # Draw the title
         title = font.render("Select an Algorithm", True, (0, 0, 0))
+        title_shadow = font.render("Select an Algorithm", True, (200, 200, 200))  # Add a shadow effect
+        screen.blit(title_shadow, (SCREEN_WIDTH // 2 - title.get_width() // 2 + 2, 102))
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
 
         # Draw algorithm buttons
@@ -56,6 +67,7 @@ def select_algorithm(screen, font):
         pygame.display.flip()
 
     return selected
+
 
 
 def main():
