@@ -97,10 +97,13 @@ def main():
             "algorithm": selected_algorithm,
             "maze": maze,
             "in_selection": False,  # Track if returning to selection
+            "solved_path": []
         }
 
         # Generator setup
         def create_generator():
+            state["solved_path"] = []
+            
             if state["algorithm"] == "BFS":
                 return bfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
             elif state["algorithm"] == "DFS":
@@ -159,6 +162,7 @@ def main():
                     elif action == "path":
                         for x, y in data:
                             pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                        state["solved_path"] = data 
                     elif action == "no_path":
                         print("No solution found.")
                 except StopIteration:
@@ -166,6 +170,10 @@ def main():
                         state["algorithm_generator"] = create_generator()
                     else:
                         state["started"] = False
+
+            if state["solved_path"]:
+                for x, y in state["solved_path"]:
+                    pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
             pygame.display.flip()
             pygame.time.Clock().tick(30)
