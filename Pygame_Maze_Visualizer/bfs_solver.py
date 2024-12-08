@@ -1,5 +1,5 @@
-from collections import deque
 import pygame
+from collections import deque
 
 def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
     """BFS generator that yields control after each step for visualization."""
@@ -9,7 +9,7 @@ def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
     visited.add(start)
     parent = {}
 
-    # Colors
+    # Colors for visualization
     green = (0, 255, 0)
     blue = (0, 0, 255)
     yellow = (255, 255, 0)
@@ -17,7 +17,7 @@ def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
     while queue:
         current = queue.popleft()
         x, y = current
-        yield ("process", current)  # Signal the main loop to process this node
+        yield ("process", current)  # Yield the current node for visualization
 
         if current == goal:
             # Reconstruct the solution path
@@ -29,6 +29,7 @@ def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
             yield ("path", path)  # Signal the main loop to visualize the solution
             return
 
+        # Process neighbors
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
             nx, ny = current[0] + dx, current[1] + dy
             if 0 <= nx < rows and 0 <= ny < cols and (nx, ny) not in visited and maze[nx, ny] == 0:
@@ -36,5 +37,3 @@ def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
                 queue.append((nx, ny))
                 parent[(nx, ny)] = current
                 yield ("visit", (nx, ny))  # Signal the main loop to mark as visited
-
-    yield ("no_path", None)  # Signal the main loop that no solution exists

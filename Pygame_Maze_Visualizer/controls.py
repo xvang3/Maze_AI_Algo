@@ -1,70 +1,97 @@
+from button import Button
 import pygame
+from maze_generator import generate_random_maze_with_solution
+from bfs_solver import bfs_with_visualization_generator
+from settings import *
 
-def init_controls(maze_width, rows, cols):
-    """Initialize UI control components."""
-    slider_x, slider_y = maze_width + 20, 150
-    slider_width, slider_height = 200, 10
-    knob_x = slider_x + (slider_width // 2)
+def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
+    """Initialize UI control components with proper alignment."""
+    slider_x = SCREEN_WIDTH - CONTROL_AREA_WIDTH + offset_x - 200  # Shift left
+    slider_y = 150 + offset_y
 
-    pause_button = pygame.Rect(slider_x, slider_y + 50, 140, 40)
-    stop_button = pygame.Rect(slider_x, slider_y + 100, 140, 40)
-    new_maze_button = pygame.Rect(slider_x, slider_y + 150, 140, 40)
-    reset_speed_button = pygame.Rect(slider_x, slider_y + 200, 140, 40)
-    slider_rect = pygame.Rect(slider_x, slider_y, slider_width, slider_height)
+    # Define button actions
+    def start_action():
+        state["started"] = True
+        state["bfs_generator"] = bfs_with_visualization_generator(
+            state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, (10, 10)
+        )
+
+    def pause_action():
+        state["paused"] = not state["paused"]
+
+    def stop_action():
+        state["started"] = False
+
+    def new_maze_action():
+        state["maze"] = generate_random_maze_with_solution(rows, cols, wall_density=0.3)
+        state["started"] = False
+        state["bfs_generator"] = bfs_with_visualization_generator(
+            state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, (10, 10)
+        )
+
+    def reset_speed_action():
+        state["speed_factor"] = 1  # Reset to 1x speed
+        controls["slider_knob_x"] = controls["slider_x"]  # Reset slider knob visually
+
+    # Create buttons with actions
+    buttons = [
+        Button(slider_x, slider_y, 140, 40, "Start", (0, 255, 0), (255, 255, 255), start_action),
+        Button(slider_x, slider_y + 50, 140, 40, "Pause/Resume", (0, 255, 0), (255, 255, 255), pause_action),
+        Button(slider_x, slider_y + 100, 140, 40, "Stop", (255, 0, 0), (255, 255, 255), stop_action),
+        Button(slider_x, slider_y + 150, 140, 40, "New Maze", (0, 0, 255), (255, 255, 255), new_maze_action),
+        Button(slider_x, slider_y + 200, 140, 40, "Reset Speed", (255, 255, 0), (0, 0, 0), reset_speed_action),
+    ]
+
+    slider_rect = pygame.Rect(slider_x, slider_y + 300, 200, 10)
+    knob_x = slider_x
 
     controls = {
-        "pause_button": pause_button,
-        "stop_button": stop_button,
-        "new_maze_button": new_maze_button,
-        "reset_speed_button": reset_speed_button,
+        "buttons": buttons,
         "slider_rect": slider_rect,
-        "paused": False
+        "slider_knob_x": knob_x,
+        "slider_x": slider_x,
+        "slider_width": 200,
     }
 
-    return controls, slider_x, slider_y, slider_width, slider_height, knob_x
+    return controls
 
-def draw_controls(screen, slider_x, slider_y, slider_width, slider_height, knob_x, controls, speed):
-    """Draw the slider, buttons, instructions, and algorithm label."""
-    font = pygame.font.Font(None, 24)
+
+def draw_controls(screen, controls, state, font):
+    """Draw controls with instructions positioned next to their respective buttons."""
+    button_instructions = {
+        "Start": "Begin the visualization.",
+        "Pause/Resume": "Pause or resume the visualization.",
+        "Stop": "Reset the current maze.",
+        "New Maze": "Generate a new random maze.",
+        "Reset Speed": "Reset to 1x speed.",
+    }
+
+    # Draw buttons and instructions
+    for button in controls["buttons"]:
+        button.draw(screen, font)
+        text_surface = font.render(button_instructions[button.text], True, (0, 0, 0))
+        instruction_x = button.rect.right + 10  # Padding to the right of the button
+        instruction_y = button.rect.y + (button.rect.height // 2 - text_surface.get_height() // 2)  # Center vertically
+        screen.blit(text_surface, (instruction_x, instruction_y))
 
     # Draw slider
-    pygame.draw.rect(screen, (200, 200, 200), (slider_x, slider_y, slider_width, slider_height))
-    pygame.draw.circle(screen, (0, 0, 255), (knob_x, slider_y + slider_height // 2), 10)
+    pygame.draw.rect(screen, (200, 200, 200), controls["slider_rect"])
+    pygame.draw.circle(
+        screen, (0, 0, 255),
+        (controls["slider_knob_x"], controls["slider_rect"].y + controls["slider_rect"].height // 2),
+        10
+    )
 
-    # Draw speed label
-    speed_label = font.render(f"Speed: {speed} ms", True, (0, 0, 0))
-    screen.blit(speed_label, (slider_x, slider_y - 30))
+    # Calculate and display speed factor
+    slider_position = controls["slider_knob_x"] - controls["slider_x"]
+    slider_fraction = slider_position / controls["slider_width"]
+    speed_factor = round(0.1 + slider_fraction * 24.9, 1)  # Map to range 0.1x–25x
+    state["speed_factor"] = speed_factor
+    speed_label = font.render(f"Speed: {speed_factor}x", True, (0, 0, 0))
+    screen.blit(speed_label, (controls["slider_x"], controls["slider_rect"].y - 30))
 
-    # Draw buttons
-    pygame.draw.rect(screen, (0, 255, 0), controls["pause_button"])
-    pygame.draw.rect(screen, (255, 0, 0), controls["stop_button"])
-    pygame.draw.rect(screen, (0, 0, 255), controls["new_maze_button"])
-    pygame.draw.rect(screen, (255, 255, 0), controls["reset_speed_button"])
+    # Draw quit instructions
+    quit_text = font.render("Press ESC or close the window to quit.", True, (0, 0, 0))
+    screen.blit(quit_text, (controls["slider_x"], controls["slider_rect"].y + 50))
 
-    pause_text = font.render("Pause/Resume", True, (255, 255, 255))
-    stop_text = font.render("Stop", True, (255, 255, 255))
-    new_maze_text = font.render("New Maze", True, (255, 255, 255))
-    reset_speed_text = font.render("Reset Speed", True, (0, 0, 0))
 
-    screen.blit(pause_text, (controls["pause_button"].x + 10, controls["pause_button"].y + 10))
-    screen.blit(stop_text, (controls["stop_button"].x + 35, controls["stop_button"].y + 10))
-    screen.blit(new_maze_text, (controls["new_maze_button"].x + 20, controls["new_maze_button"].y + 10))
-    screen.blit(reset_speed_text, (controls["reset_speed_button"].x + 10, controls["reset_speed_button"].y + 10))
-
-    # Draw instructions
-    instructions = [
-        "Instructions:",
-        "- Adjust speed with the slider.",
-        "- Pause or resume with the Pause/Resume button.",
-        "- Stop restarts the current maze.",
-        "- New Maze generates a new maze.",
-        "- Reset Speed resets to default speed.",
-        "- Press ESC or close the window to quit."
-    ]
-    for i, line in enumerate(instructions):
-        text = font.render(line, True, (0, 0, 0))
-        screen.blit(text, (slider_x, slider_y + 250 + (i * 20)))
-
-    # Algorithm label
-    algorithm_label = font.render("Algorithm: BFS", True, (0, 0, 0))
-    screen.blit(algorithm_label, (slider_x, 20))
