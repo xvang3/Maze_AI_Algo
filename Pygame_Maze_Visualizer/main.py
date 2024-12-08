@@ -2,16 +2,21 @@ import pygame
 from maze_generator import generate_random_maze_with_solution
 from bfs_solver import bfs_with_visualization_generator
 from dfs_solver import dfs_with_visualization_generator
+from heuristic_solver import heuristic_with_visualization_generator
+from astar_solver import astar_with_visualization_generator
 from controls import draw_controls, init_controls
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, CELL_SIZE, INITIAL_DELAY
 
 def select_algorithm(screen, font):
     """Display a selection menu for algorithms and return the selected one."""
-    algorithms = ["BFS", "DFS"]
+    algorithms = ["BFS", "DFS", "Heuristic", "A*"]
     buttons = []
     for i, algo in enumerate(algorithms):
         button = pygame.Rect(SCREEN_WIDTH // 2 - 100, 200 + i * 60, 200, 50)
         buttons.append((button, algo))
+
+    # Add Exit button
+    exit_button = pygame.Rect(SCREEN_WIDTH // 2 - 100, 200 + len(algorithms) * 60 + 20, 200, 50)
 
     selected = None
     while selected is None:
@@ -19,23 +24,39 @@ def select_algorithm(screen, font):
         title = font.render("Select an Algorithm", True, (0, 0, 0))
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
 
+        # Draw algorithm buttons
         for button, algo in buttons:
             pygame.draw.rect(screen, (0, 0, 255), button)
             text = font.render(algo, True, (255, 255, 255))
             text_rect = text.get_rect(center=button.center)
             screen.blit(text, text_rect)
 
+        # Draw Exit button
+        pygame.draw.rect(screen, (255, 0, 0), exit_button)
+        exit_text = font.render("Exit", True, (255, 255, 255))
+        exit_text_rect = exit_text.get_rect(center=exit_button.center)
+        screen.blit(exit_text, exit_text_rect)
+
+        # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pygame.quit()
                 exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for button, algo in buttons:
                     if button.collidepoint(event.pos):
                         selected = algo
+                if exit_button.collidepoint(event.pos):
+                    pygame.quit()
+                    exit()
 
         pygame.display.flip()
+
     return selected
+
 
 def main():
     pygame.init()
@@ -72,6 +93,12 @@ def main():
                 return bfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
             elif state["algorithm"] == "DFS":
                 return dfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+            elif state["algorithm"] == "Heuristic":
+                return heuristic_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+            elif state["algorithm"] == "A*":
+                return astar_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+
+
 
         state["create_generator"] = create_generator
         state["algorithm_generator"] = create_generator()
