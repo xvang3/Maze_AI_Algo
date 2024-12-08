@@ -1,7 +1,6 @@
 from button import Button
 import pygame
 from maze_generator import generate_random_maze_with_solution
-from bfs_solver import bfs_with_visualization_generator
 from settings import *
 
 def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
@@ -12,9 +11,8 @@ def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
     # Define button actions
     def start_action():
         state["started"] = True
-        state["bfs_generator"] = bfs_with_visualization_generator(
-            state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, (10, 10)
-        )
+        if "create_generator" in state:
+            state["algorithm_generator"] = state["create_generator"]()  # Create a fresh generator
 
     def pause_action():
         state["paused"] = not state["paused"]
@@ -25,24 +23,31 @@ def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
     def new_maze_action():
         state["maze"] = generate_random_maze_with_solution(rows, cols, wall_density=0.3)
         state["started"] = False
-        state["bfs_generator"] = bfs_with_visualization_generator(
-            state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, (10, 10)
-        )
+        if "create_generator" in state:
+            state["algorithm_generator"] = state["create_generator"]()  # Create a fresh generator
 
     def reset_speed_action():
         state["speed_factor"] = 1  # Reset to 1x speed
         controls["slider_knob_x"] = controls["slider_x"]  # Reset slider knob visually
+        state["speed"] = int(500 / state["speed_factor"])  # Reset the speed factor
+
+    def back_action():
+        state["in_selection"] = True  # Set flag to re-enter algorithm selection
+        state["running"] = False  # Break the main loop to return
 
     # Create buttons with actions
+    button_width, button_height = 200, 50  # Adjusted button size
+    button_spacing = 60  # Adjusted spacing between buttons
     buttons = [
-        Button(slider_x, slider_y, 140, 40, "Start", (0, 255, 0), (255, 255, 255), start_action),
-        Button(slider_x, slider_y + 50, 140, 40, "Pause/Resume", (0, 255, 0), (255, 255, 255), pause_action),
-        Button(slider_x, slider_y + 100, 140, 40, "Stop", (255, 0, 0), (255, 255, 255), stop_action),
-        Button(slider_x, slider_y + 150, 140, 40, "New Maze", (0, 0, 255), (255, 255, 255), new_maze_action),
-        Button(slider_x, slider_y + 200, 140, 40, "Reset Speed", (255, 255, 0), (0, 0, 0), reset_speed_action),
+        Button(slider_x, slider_y, button_width, button_height, "Start", (0, 255, 0), (255, 255, 255), start_action),
+        Button(slider_x, slider_y + button_spacing, button_width, button_height, "Pause/Resume", (0, 255, 0), (255, 255, 255), pause_action),
+        Button(slider_x, slider_y + button_spacing * 2, button_width, button_height, "Stop", (255, 0, 0), (255, 255, 255), stop_action),
+        Button(slider_x, slider_y + button_spacing * 3, button_width, button_height, "New Maze", (0, 0, 255), (255, 255, 255), new_maze_action),
+        Button(slider_x, slider_y + button_spacing * 4, button_width, button_height, "Reset Speed", (255, 255, 0), (0, 0, 0), reset_speed_action),
+        Button(slider_x, slider_y + button_spacing * 5, button_width, button_height, "Back", (255, 165, 0), (255, 255, 255), back_action),  # Add Back button
     ]
 
-    slider_rect = pygame.Rect(slider_x, slider_y + 300, 200, 10)
+    slider_rect = pygame.Rect(slider_x, slider_y + button_spacing * 6, 200, 10)
     knob_x = slider_x
 
     controls = {
@@ -53,7 +58,10 @@ def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
         "slider_width": 200,
     }
 
-    return controls
+    return controls, slider_x, slider_y, 200, 10, knob_x
+
+
+
 
 
 def draw_controls(screen, controls, state, font):
@@ -64,6 +72,7 @@ def draw_controls(screen, controls, state, font):
         "Stop": "Reset the current maze.",
         "New Maze": "Generate a new random maze.",
         "Reset Speed": "Reset to 1x speed.",
+        "Back": "Return to algorithm selection.",  # Add instruction for Back button
     }
 
     # Draw buttons and instructions
@@ -72,6 +81,11 @@ def draw_controls(screen, controls, state, font):
         text_surface = font.render(button_instructions[button.text], True, (0, 0, 0))
         instruction_x = button.rect.right + 10  # Padding to the right of the button
         instruction_y = button.rect.y + (button.rect.height // 2 - text_surface.get_height() // 2)  # Center vertically
+
+        # Ensure instructions do not overflow the screen width
+        if instruction_x + text_surface.get_width() > SCREEN_WIDTH:
+            instruction_x = button.rect.x - text_surface.get_width() - 10  # Move to the left side of the button
+
         screen.blit(text_surface, (instruction_x, instruction_y))
 
     # Draw slider
@@ -93,5 +107,4 @@ def draw_controls(screen, controls, state, font):
     # Draw quit instructions
     quit_text = font.render("Press ESC or close the window to quit.", True, (0, 0, 0))
     screen.blit(quit_text, (controls["slider_x"], controls["slider_rect"].y + 50))
-
 
