@@ -22,10 +22,10 @@ def calculate_cell_size(screen_width, screen_height, maze_width=10, maze_height=
 SCREEN_WIDTH, SCREEN_HEIGHT = get_screen_dimensions()
 
 # Cell size for the maze
-CELL_SIZE = max(20, min(38, calculate_cell_size(SCREEN_WIDTH, SCREEN_HEIGHT, 10, 10)))
+CELL_SIZE = max(20, min(36, calculate_cell_size(SCREEN_WIDTH, SCREEN_HEIGHT, 10, 10)))
 
 # Initial speed (delay in milliseconds)
-INITIAL_DELAY = 100
+INITIAL_DELAY = 500
 
 # Control panel width
 CONTROL_PANEL_WIDTH = 200

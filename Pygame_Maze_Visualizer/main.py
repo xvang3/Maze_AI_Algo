@@ -113,21 +113,24 @@ def main():
             "algorithm": selected_algorithm,
             "maze": maze,
             "in_selection": False,  # Track if returning to selection
+            "speed": INITIAL_DELAY,
+            "speed_factor": 1.0  # Default speed factor
         }
 
         # Generator setup
         def create_generator():
             if state["algorithm"] == "BFS":
-                return bfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+                return bfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
             elif state["algorithm"] == "DFS":
-                return dfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+                return dfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
             elif state["algorithm"] == "Heuristic":
-                return heuristic_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+                return heuristic_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
             elif state["algorithm"] == "A*":
-                return astar_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+                return astar_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
 
-        state["create_generator"] = create_generator
-        state["algorithm_generator"] = create_generator()
+        state["create_generator"] = create_generator  # Store the reference correctly
+        state["algorithm_generator"] = state["create_generator"]()  # Dynamically create the generator
+
 
         # Control setup with offsets
         controls, slider_x, slider_y, slider_width, slider_height, knob_x = init_controls(
@@ -189,11 +192,15 @@ def main():
                             pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
                     elif action == "no_path":
                         print("No solution found.")
+                    
+                    # Add dynamic delay
+                    pygame.time.delay(state["speed"])  # Dynamically adjust delay based on speed
                 except StopIteration:
                     if state["repeat"]:
                         state["algorithm_generator"] = create_generator()
                     else:
                         state["started"] = False
+
 
             pygame.display.flip()
             pygame.time.Clock().tick(30)

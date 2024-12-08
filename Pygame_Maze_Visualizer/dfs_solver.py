@@ -1,6 +1,6 @@
 import pygame
 
-def dfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
+def dfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset, state):
     """DFS generator that yields control after each step for visualization."""
     rows, cols = maze.shape
     stack = [start]
@@ -19,6 +19,9 @@ def dfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
 
         # Yield current node for visualization
         yield ("process", current)
+
+        # Dynamic delay
+        pygame.time.delay(state["speed"])
 
         if current == goal:
             # Reconstruct and visualize the path
@@ -39,5 +42,4 @@ def dfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
                 parent[(nx, ny)] = current
                 yield ("visit", (nx, ny))  # Yield visited node
 
-    # No path found
     yield ("no_path", None)

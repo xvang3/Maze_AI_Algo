@@ -1,7 +1,7 @@
 import pygame
 from heapq import heappush, heappop
 
-def heuristic_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
+def heuristic_with_visualization_generator(maze, start, goal, cell_size, maze_offset, state):
     """Heuristic search generator for visualization."""
     rows, cols = maze.shape
     open_set = []  # Priority queue for heuristic search
@@ -9,11 +9,6 @@ def heuristic_with_visualization_generator(maze, start, goal, cell_size, maze_of
     visited = set()
     visited.add(start)
     parent = {}
-
-    # Visualization colors
-    blue = (0, 0, 255)  # Current node
-    yellow = (255, 255, 0)  # Visited nodes
-    green = (0, 255, 0)  # Path nodes
 
     # Heuristic function: Manhattan distance
     def heuristic(node, goal):
@@ -25,6 +20,9 @@ def heuristic_with_visualization_generator(maze, start, goal, cell_size, maze_of
 
         # Yield the current node for visualization
         yield ("process", current)
+
+        # Dynamic delay
+        pygame.time.delay(state["speed"])
 
         if current == goal:
             # Reconstruct and visualize the path
@@ -46,5 +44,4 @@ def heuristic_with_visualization_generator(maze, start, goal, cell_size, maze_of
                 heappush(open_set, (h_value, (nx, ny)))
                 yield ("visit", (nx, ny))  # Yield visited node
 
-    # No path found
     yield ("no_path", None)

@@ -1,7 +1,7 @@
 import pygame
 from heapq import heappush, heappop
 
-def astar_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
+def astar_with_visualization_generator(maze, start, goal, cell_size, maze_offset, state):
     """A* search generator for visualization."""
     rows, cols = maze.shape
     open_set = []  # Priority queue for A* search
@@ -10,11 +10,6 @@ def astar_with_visualization_generator(maze, start, goal, cell_size, maze_offset
     visited = set()
     visited.add(start)
     parent = {}
-
-    # Visualization colors
-    blue = (0, 0, 255)  # Current node
-    yellow = (255, 255, 0)  # Visited nodes
-    green = (0, 255, 0)  # Path nodes
 
     # Heuristic function: Manhattan distance
     def heuristic(node, goal):
@@ -26,6 +21,9 @@ def astar_with_visualization_generator(maze, start, goal, cell_size, maze_offset
 
         # Yield the current node for visualization
         yield ("process", current)
+
+        # Dynamic delay
+        pygame.time.delay(state["speed"])
 
         if current == goal:
             # Reconstruct and visualize the path
@@ -41,17 +39,12 @@ def astar_with_visualization_generator(maze, start, goal, cell_size, maze_offset
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
             nx, ny = current[0] + dx, current[1] + dy
             if 0 <= nx < rows and 0 <= ny < cols and maze[nx, ny] == 0:
-                tentative_g_score = g_scores[current] + 1  # Increment cost by 1 for each step
+                tentative_g_score = g_scores[current] + 1
                 if (nx, ny) not in g_scores or tentative_g_score < g_scores[(nx, ny)]:
                     g_scores[(nx, ny)] = tentative_g_score
                     f_score = tentative_g_score + heuristic((nx, ny), goal)
                     parent[(nx, ny)] = current
                     heappush(open_set, (f_score, (nx, ny)))
+                    yield ("visit", (nx, ny))  # Yield visited node
 
-                    # Mark the node as visited if not already
-                    if (nx, ny) not in visited:
-                        visited.add((nx, ny))
-                        yield ("visit", (nx, ny))  # Yield visited node
-
-    # No path found
     yield ("no_path", None)

@@ -1,7 +1,7 @@
 import pygame
 from collections import deque
 
-def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
+def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset, state):
     """BFS generator that yields control after each step for visualization."""
     rows, cols = maze.shape
     queue = deque([start])
@@ -18,6 +18,9 @@ def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
         current = queue.popleft()
         x, y = current
         yield ("process", current)  # Yield the current node for visualization
+
+        # Dynamic delay
+        pygame.time.delay(state["speed"])
 
         if current == goal:
             # Reconstruct the solution path
@@ -37,3 +40,5 @@ def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset):
                 queue.append((nx, ny))
                 parent[(nx, ny)] = current
                 yield ("visit", (nx, ny))  # Signal the main loop to mark as visited
+
+    yield ("no_path", None)
