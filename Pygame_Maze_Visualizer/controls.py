@@ -3,10 +3,15 @@ import pygame
 from maze_generator import generate_random_maze_with_solution
 from settings import *
 
+# Constant for number of buttons
+NUM_BUTTONS = 6
+OTHER_SETTINGS = 2
+TOTAL_BUTTONS = NUM_BUTTONS + OTHER_SETTINGS
+
 def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
     """Initialize UI control components with proper alignment."""
-    slider_x = SCREEN_WIDTH - CONTROL_AREA_WIDTH + offset_x - 200  # Shift left
-    slider_y = 150 + offset_y
+    slider_x = 20  # Shift left
+    slider_y = SCREEN_HEIGHT - (40 * TOTAL_BUTTONS) # Shift up
 
     # Define button actions
     def start_action():
@@ -36,8 +41,8 @@ def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
         state["running"] = False  # Break the main loop to return
 
     # Create buttons with actions
-    button_width, button_height = 200, 50  # Adjusted button size
-    button_spacing = 60  # Adjusted spacing between buttons
+    button_width, button_height = 120, 20  # Adjusted button size
+    button_spacing = 40  # Adjusted spacing between buttons
     buttons = [
         Button(slider_x, slider_y, button_width, button_height, "Start", (0, 255, 0), (255, 255, 255), start_action),
         Button(slider_x, slider_y + button_spacing, button_width, button_height, "Pause/Resume", (0, 255, 0), (255, 255, 255), pause_action),
@@ -47,7 +52,7 @@ def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
         Button(slider_x, slider_y + button_spacing * 5, button_width, button_height, "Back", (255, 165, 0), (255, 255, 255), back_action),  # Add Back button
     ]
 
-    slider_rect = pygame.Rect(slider_x, slider_y + button_spacing * 6, 200, 10)
+    slider_rect = pygame.Rect(slider_x, slider_y + button_spacing * 6, 400, 20)
     knob_x = slider_x
 
     controls = {
@@ -101,10 +106,16 @@ def draw_controls(screen, controls, state, font):
     slider_fraction = slider_position / controls["slider_width"]
     speed_factor = round(0.1 + slider_fraction * 24.9, 1)  # Map to range 0.1x–25x
     state["speed_factor"] = speed_factor
+
+    # Position the speed label below the slider
     speed_label = font.render(f"Speed: {speed_factor}x", True, (0, 0, 0))
-    screen.blit(speed_label, (controls["slider_x"], controls["slider_rect"].y - 30))
+    speed_label_x = controls["slider_x"]
+    speed_label_y = controls["slider_rect"].y + controls["slider_rect"].height + 10  # Add 10 pixels below the slider
+    screen.blit(speed_label, (speed_label_x, speed_label_y))
 
     # Draw quit instructions
     quit_text = font.render("Press ESC or close the window to quit.", True, (0, 0, 0))
-    screen.blit(quit_text, (controls["slider_x"], controls["slider_rect"].y + 50))
+    quit_text_y = speed_label_y + 30  # Position below the speed label
+    screen.blit(quit_text, (controls["slider_x"], quit_text_y))
+
 

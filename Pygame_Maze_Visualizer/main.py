@@ -48,6 +48,22 @@ def select_algorithm(screen, font):
         exit_text_rect = exit_text.get_rect(center=exit_button.center)
         screen.blit(exit_text, exit_text_rect)
 
+        # Hover logic
+        mouse_pos = pygame.mouse.get_pos()
+        hover = False
+        for button, algo in buttons:
+            if button.collidepoint(mouse_pos):
+                hover = True
+                break
+        if exit_button.collidepoint(mouse_pos):
+            hover = True
+
+        # Change cursor based on hover state
+        if hover:
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
+        else:
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Default cursor
+
         # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -69,10 +85,10 @@ def select_algorithm(screen, font):
     return selected
 
 
-
 def main():
     pygame.init()
-    font = pygame.font.Font(None, 36)
+    title_font = pygame.font.Font(None, 36)
+    button_font = pygame.font.Font(None, 16)
 
     # Screen setup
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -80,7 +96,7 @@ def main():
 
     while True:  # Restart the loop to re-select algorithm
         # Algorithm selection
-        selected_algorithm = select_algorithm(screen, font)
+        selected_algorithm = select_algorithm(screen, title_font)
 
         # Maze setup
         rows, cols = 10, 10
@@ -110,8 +126,6 @@ def main():
             elif state["algorithm"] == "A*":
                 return astar_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
 
-
-
         state["create_generator"] = create_generator
         state["algorithm_generator"] = create_generator()
 
@@ -133,7 +147,21 @@ def main():
                     pygame.draw.rect(screen, (200, 200, 200), (x, y, CELL_SIZE, CELL_SIZE), 1)
 
             # Draw controls
-            draw_controls(screen, controls, state, font)
+            draw_controls(screen, controls, state, button_font)
+
+            # Hover logic
+            mouse_pos = pygame.mouse.get_pos()
+            hover = False
+            for button in controls["buttons"]:
+                if button.rect.collidepoint(mouse_pos):
+                    hover = True
+                    break
+
+            # Change cursor based on hover state
+            if hover:
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
+            else:
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Default cursor
 
             # Handle events
             for event in pygame.event.get():
@@ -176,7 +204,6 @@ def main():
             break
 
     pygame.quit()
-
 
 if __name__ == "__main__":
     main()
