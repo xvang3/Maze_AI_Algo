@@ -25,7 +25,7 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 720
 CELL_SIZE = max(20, min(36, calculate_cell_size(SCREEN_WIDTH, SCREEN_HEIGHT, 10, 10)))
 
 # Initial speed (delay in milliseconds)
-INITIAL_DELAY = 0
+INITIAL_DELAY = 100
 
 # Control panel width
 CONTROL_PANEL_WIDTH = 200

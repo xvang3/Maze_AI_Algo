@@ -1,5 +1,6 @@
 import pygame
 from collections import deque
+from settings import INITIAL_DELAY
 
 def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset, state):
     """BFS generator that yields control after each step for visualization."""
@@ -20,7 +21,9 @@ def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset, 
         yield ("process", current)  # Yield the current node for visualization
 
         # Dynamic delay
-        pygame.time.delay(state["speed"])
+        # print(f"Speed factor: {state['speed_factor']}")
+        state["speed_factor"] = int(INITIAL_DELAY / state["speed_factor"])
+        pygame.time.delay(max(1, state["speed"]))  # Ensure non-zero positive delay
 
         if current == goal:
             # Reconstruct the solution path

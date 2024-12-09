@@ -123,7 +123,8 @@ def draw_controls(screen, controls, state, font):
     # Calculate speed factor dynamically
     slider_fraction = (controls["slider_knob_x"] - controls["slider_x"]) / controls["slider_width"]
     state["speed_factor"] = round(SLIDER_MIN + slider_fraction * (SLIDER_MAX - SLIDER_MIN), 1)
-    state["speed"] = int(INITIAL_DELAY / state["speed_factor"])
+    state["speed"] = int(INITIAL_DELAY / state["speed_factor"])  # Ensure speed is an integer
+
 
     # Display speed label
     speed_label = font.render(f"Speed: {state['speed_factor']:.1f}x", True, (0, 0, 0))
