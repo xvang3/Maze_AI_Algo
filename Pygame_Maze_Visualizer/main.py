@@ -83,7 +83,7 @@ def main():
         selected_algorithm = select_algorithm(screen, title_font)
 
         # Maze setup
-        rows, cols = 10, 10
+        rows, cols = 11, 11
         maze = generate_random_maze_with_solution(rows, cols, wall_density=0.3)
         maze_offset = (10, 10)
         maze_width = int(SCREEN_WIDTH * 0.8)
