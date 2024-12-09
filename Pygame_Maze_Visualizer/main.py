@@ -88,6 +88,11 @@ def main():
         maze_offset = (10, 10)
         maze_width = int(SCREEN_WIDTH * 0.8)
 
+        # Debugging: Print the generated maze to the console
+        print("Generated Maze (used in UI):")
+        for row in maze:
+            print(" ".join(map(str, row)))
+
         # Shared state object
         state = {
             "paused": False,

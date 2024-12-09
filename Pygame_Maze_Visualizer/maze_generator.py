@@ -31,6 +31,20 @@ def generate_maze_with_prims(rows, cols):
                 maze[(x + px) // 2, (y + py) // 2] = 0
                 add_neighbors(x, y)
 
+    # Add outer wall border
+    maze[0, :] = 1  # Top row
+    maze[rows - 1, :] = 1  # Bottom row
+    maze[:, 0] = 1  # Left column
+    maze[:, cols - 1] = 1  # Right column
+
+    maze[0, 0] = 0
+    maze[rows-1, cols-1] = 0
+
+    # Debugging: Print the generated maze to the console
+    print("Generated Maze (prims):")
+    for row in maze:
+        print(" ".join(map(str, row)))
+
     return maze
 
 def generate_random_maze_with_solution(rows, cols, wall_density=0.3):
@@ -51,4 +65,19 @@ def generate_random_maze_with_solution(rows, cols, wall_density=0.3):
             y += 1
         maze[x, y] = 0
 
+    # Ensure no two consecutive rows are completely walls or completely open
+    for i in range(1, rows):
+        if np.all(maze[i] == 1) and np.all(maze[i-1] == 1):  # Both rows are walls
+            # Change the current row to some open space
+            maze[i] = np.zeros(cols, dtype=int)
+        elif np.all(maze[i] == 0) and np.all(maze[i-1] == 0):  # Both rows are open space
+            # Change the current row to some walls
+            maze[i] = np.ones(cols, dtype=int)
+
+    # Debugging: Print the generated maze to the console
+    print("Generated Maze (solution):")
+    for row in maze:
+        print(" ".join(map(str, row)))
+
+    
     return maze
