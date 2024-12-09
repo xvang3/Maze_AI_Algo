@@ -4,12 +4,11 @@ from bfs_solver import bfs_with_visualization_generator
 from dfs_solver import dfs_with_visualization_generator
 from heuristic_solver import heuristic_with_visualization_generator
 from astar_solver import astar_with_visualization_generator
-from controls import draw_controls, init_controls
+from controls import draw_controls, init_controls, handle_slider_event
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, CELL_SIZE, INITIAL_DELAY
 
 def select_algorithm(screen, font):
     """Display a selection menu for algorithms with a background image and return the selected one."""
-
     # Load and scale the background image
     background_path = "images/maze1.png"
     background_image = pygame.image.load(background_path)
@@ -31,8 +30,6 @@ def select_algorithm(screen, font):
 
         # Draw the title
         title = font.render("Select an Algorithm", True, (0, 0, 0))
-        title_shadow = font.render("Select an Algorithm", True, (200, 200, 200))  # Add a shadow effect
-        screen.blit(title_shadow, (SCREEN_WIDTH // 2 - title.get_width() // 2 + 2, 102))
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
 
         # Draw algorithm buttons
@@ -50,26 +47,13 @@ def select_algorithm(screen, font):
 
         # Hover logic
         mouse_pos = pygame.mouse.get_pos()
-        hover = False
-        for button, algo in buttons:
-            if button.collidepoint(mouse_pos):
-                hover = True
-                break
-        if exit_button.collidepoint(mouse_pos):
-            hover = True
+        hover = any(button.collidepoint(mouse_pos) for button, _ in buttons) or exit_button.collidepoint(mouse_pos)
 
-        # Change cursor based on hover state
-        if hover:
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
-        else:
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Default cursor
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND if hover else pygame.SYSTEM_CURSOR_ARROW)
 
         # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pygame.quit()
                 exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -131,11 +115,8 @@ def main():
         state["create_generator"] = create_generator  # Store the reference correctly
         state["algorithm_generator"] = state["create_generator"]()  # Dynamically create the generator
 
-
         # Control setup with offsets
-        controls, slider_x, slider_y, slider_width, slider_height, knob_x = init_controls(
-            maze_width, rows, cols, state, offset_x=50, offset_y=30
-        )
+        controls = init_controls(maze_width, rows, cols, state, offset_x=50, offset_y=30)
 
         # Main loop
         while state["running"]:
@@ -152,26 +133,15 @@ def main():
             # Draw controls
             draw_controls(screen, controls, state, button_font)
 
-            # Hover logic
-            mouse_pos = pygame.mouse.get_pos()
-            hover = False
-            for button in controls["buttons"]:
-                if button.rect.collidepoint(mouse_pos):
-                    hover = True
-                    break
-
-            # Change cursor based on hover state
-            if hover:
-                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # Hand cursor
-            else:
-                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Default cursor
-
             # Handle events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     state["running"] = False
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     state["running"] = False
+
+                # Handle slider interaction
+                handle_slider_event(event, controls, state)
 
                 # Pass events to each button for handling
                 for button in controls["buttons"]:
@@ -192,15 +162,14 @@ def main():
                             pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
                     elif action == "no_path":
                         print("No solution found.")
-                    
-                    # Add dynamic delay
-                    pygame.time.delay(state["speed"])  # Dynamically adjust delay based on speed
+
+                    # Adjust delay dynamically based on speed
+                    pygame.time.delay(max(1, int(state["speed"])))
                 except StopIteration:
                     if state["repeat"]:
                         state["algorithm_generator"] = create_generator()
                     else:
                         state["started"] = False
-
 
             pygame.display.flip()
             pygame.time.Clock().tick(30)
@@ -211,6 +180,7 @@ def main():
             break
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()
