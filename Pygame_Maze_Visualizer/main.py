@@ -98,8 +98,12 @@ def main():
             "maze": maze,
             "in_selection": False,  # Track if returning to selection
             "speed": INITIAL_DELAY,
-            "speed_factor": 1.0  # Default speed factor
+            "speed_factor": 1.0,  # Default speed factor
+            "current_node": None,  # Track the currently processed node
+            "visited_nodes": set(),  # Track all visited nodes
+            "solution_path": []  # Track the solution path
         }
+
 
         # Generator setup
         def create_generator():
@@ -126,9 +130,17 @@ def main():
             for row in range(rows):
                 for col in range(cols):
                     x, y = maze_offset[0] + col * CELL_SIZE, maze_offset[1] + row * CELL_SIZE
-                    color = (0, 0, 0) if state["maze"][row, col] == 1 else (255, 255, 255)
-                    pygame.draw.rect(screen, color, (x, y, CELL_SIZE, CELL_SIZE))
+                    if (row, col) == state["current_node"]:
+                        pygame.draw.rect(screen, (0, 0, 255), (x, y, CELL_SIZE, CELL_SIZE))  # Blue for current node
+                    elif (row, col) in state["visited_nodes"]:
+                        pygame.draw.rect(screen, (255, 255, 0), (x, y, CELL_SIZE, CELL_SIZE))  # Yellow for visited nodes
+                    elif "solution_path" in state and (row, col) in state["solution_path"]:
+                        pygame.draw.rect(screen, (0, 255, 0), (x, y, CELL_SIZE, CELL_SIZE))  # Green for solution path
+                    else:
+                        color = (0, 0, 0) if state["maze"][row, col] == 1 else (255, 255, 255)
+                        pygame.draw.rect(screen, color, (x, y, CELL_SIZE, CELL_SIZE))
                     pygame.draw.rect(screen, (200, 200, 200), (x, y, CELL_SIZE, CELL_SIZE), 1)
+
 
             # Draw controls
             draw_controls(screen, controls, state, button_font)
@@ -152,24 +164,21 @@ def main():
                 try:
                     action, data = next(state["algorithm_generator"])
                     if action == "process":
-                        x, y = data
-                        pygame.draw.rect(screen, (0, 0, 255), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                        state["current_node"] = data  # Track the current node
                     elif action == "visit":
-                        x, y = data
-                        pygame.draw.rect(screen, (255, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                        state["visited_nodes"].add(data)  # Track visited nodes
                     elif action == "path":
-                        for x, y in data:
-                            pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                        state["solution_path"] = data  # Save the solution path to state
                     elif action == "no_path":
                         print("No solution found.")
-
-                    # Adjust delay dynamically based on speed
-                    pygame.time.delay(max(1, int(state["speed"])))
                 except StopIteration:
-                    if state["repeat"]:
-                        state["algorithm_generator"] = create_generator()
-                    else:
-                        state["started"] = False
+                    state["started"] = False  # Stop the algorithm after completion
+
+            # Ensure the solution path is always drawn after the algorithm completes
+            if not state["started"] and state["solution_path"]:
+                for x, y in state["solution_path"]:
+                    pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
 
             pygame.display.flip()
             pygame.time.Clock().tick(30)
