@@ -14,7 +14,7 @@ def select_algorithm(screen, font):
     background_image = pygame.image.load(background_path)
     background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
-    algorithms = ["BFS", "DFS", "Heuristic", "A*"]
+    algorithms = ["BFS", "DFS", "Heuristic", "A*", "Comparison"]
     buttons = []
     for i, algo in enumerate(algorithms):
         button = pygame.Rect(SCREEN_WIDTH // 2 - 100, 200 + i * 60, 200, 50)
@@ -81,6 +81,31 @@ def main():
     while True:  # Restart the loop to re-select algorithm
         # Algorithm selection
         selected_algorithm = select_algorithm(screen, title_font)
+
+        # Check for "Comparison" and initialize accordingly
+        if selected_algorithm == "Comparison":
+            from multi_algo_comparison import multi_algo_comparison
+
+            # Prepare shared state for comparison
+            shared_state = {
+                "paused": False,
+                "running": True,
+                "started": False,
+                "repeat": False,
+                "algorithm": "Comparison",  # Add algorithm key
+                "speed": INITIAL_DELAY,
+                "speed_factor": 1.0,
+                "state_label": "Stopped",  # Initial state label
+                "stop_clicked": False,  # Track Stop button state
+                "current_node": None,  # Track current processing node
+                "visited_nodes": set(),  # Track visited nodes
+                "solution_path": [],  # Store the solution path
+                "solved_path": []  # Path for solved maze
+            }
+
+            # Run the multi-algorithm comparison
+            multi_algo_comparison(screen, button_font, shared_state)
+            continue  # Restart the loop after comparison ends
 
         # Maze setup
         rows, cols = 10, 10
