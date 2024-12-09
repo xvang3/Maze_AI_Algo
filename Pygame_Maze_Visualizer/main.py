@@ -4,12 +4,11 @@ from bfs_solver import bfs_with_visualization_generator
 from dfs_solver import dfs_with_visualization_generator
 from heuristic_solver import heuristic_with_visualization_generator
 from astar_solver import astar_with_visualization_generator
-from controls import draw_controls, init_controls
+from controls import draw_controls, init_controls, handle_slider_event
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, CELL_SIZE, INITIAL_DELAY
 
 def select_algorithm(screen, font):
     """Display a selection menu for algorithms with a background image and return the selected one."""
-
     # Load and scale the background image
     background_path = "images/maze1.png"
     background_image = pygame.image.load(background_path)
@@ -31,8 +30,6 @@ def select_algorithm(screen, font):
 
         # Draw the title
         title = font.render("Select an Algorithm", True, (0, 0, 0))
-        title_shadow = font.render("Select an Algorithm", True, (200, 200, 200))  # Add a shadow effect
-        screen.blit(title_shadow, (SCREEN_WIDTH // 2 - title.get_width() // 2 + 2, 102))
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
 
         # Draw algorithm buttons
@@ -48,12 +45,15 @@ def select_algorithm(screen, font):
         exit_text_rect = exit_text.get_rect(center=exit_button.center)
         screen.blit(exit_text, exit_text_rect)
 
+        # Hover logic
+        mouse_pos = pygame.mouse.get_pos()
+        hover = any(button.collidepoint(mouse_pos) for button, _ in buttons) or exit_button.collidepoint(mouse_pos)
+
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND if hover else pygame.SYSTEM_CURSOR_ARROW)
+
         # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pygame.quit()
                 exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -69,10 +69,10 @@ def select_algorithm(screen, font):
     return selected
 
 
-
 def main():
     pygame.init()
-    font = pygame.font.Font(None, 36)
+    title_font = pygame.font.Font(None, 36)
+    button_font = pygame.font.Font(None, 16)
 
     # Screen setup
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -80,7 +80,7 @@ def main():
 
     while True:  # Restart the loop to re-select algorithm
         # Algorithm selection
-        selected_algorithm = select_algorithm(screen, font)
+        selected_algorithm = select_algorithm(screen, title_font)
 
         # Maze setup
         rows, cols = 10, 10
@@ -96,32 +96,36 @@ def main():
             "repeat": False,
             "algorithm": selected_algorithm,
             "maze": maze,
-            "in_selection": False,  # Track if returning to selection
+            "in_selection": False,
+            "speed": INITIAL_DELAY,
+            "speed_factor": 1.0,
+            "stop_clicked": False,  # Track Stop button state
+            "current_node": None,  # Track the current processing node
+            "visited_nodes": set(),  # Track visited nodes
+            "solution_path": [],  # Store the solution path
+            "state_label": "Stopped",  # Initial state label
             "solved_path": []
         }
+
 
         # Generator setup
         def create_generator():
             state["solved_path"] = []
             
             if state["algorithm"] == "BFS":
-                return bfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+                return bfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
             elif state["algorithm"] == "DFS":
-                return dfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+                return dfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
             elif state["algorithm"] == "Heuristic":
-                return heuristic_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+                return heuristic_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
             elif state["algorithm"] == "A*":
-                return astar_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset)
+                return astar_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
 
-
-
-        state["create_generator"] = create_generator
-        state["algorithm_generator"] = create_generator()
+        state["create_generator"] = create_generator  # Store the reference correctly
+        state["algorithm_generator"] = state["create_generator"]()  # Dynamically create the generator
 
         # Control setup with offsets
-        controls, slider_x, slider_y, slider_width, slider_height, knob_x = init_controls(
-            maze_width, rows, cols, state, offset_x=50, offset_y=30
-        )
+        controls = init_controls(maze_width, rows, cols, state, offset_x=50, offset_y=30)
 
         # Main loop
         while state["running"]:
@@ -135,8 +139,23 @@ def main():
                     pygame.draw.rect(screen, color, (x, y, CELL_SIZE, CELL_SIZE))
                     pygame.draw.rect(screen, (200, 200, 200), (x, y, CELL_SIZE, CELL_SIZE), 1)
 
+            # Clear visualization when "Stop" is clicked twice
+            if not state["stop_clicked"]:
+                # Draw visited nodes
+                for x, y in state["visited_nodes"]:
+                    pygame.draw.rect(screen, (255, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                # Draw current node
+                if state["current_node"]:
+                    x, y = state["current_node"]
+                    pygame.draw.rect(screen, (0, 0, 255), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                # Draw solution path
+                for x, y in state["solution_path"]:
+                    pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
+
+
             # Draw controls
-            draw_controls(screen, controls, state, font)
+            draw_controls(screen, controls, state, button_font)
 
             # Handle events
             for event in pygame.event.get():
@@ -144,6 +163,9 @@ def main():
                     state["running"] = False
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     state["running"] = False
+
+                # Handle slider interaction
+                handle_slider_event(event, controls, state)
 
                 # Pass events to each button for handling
                 for button in controls["buttons"]:
@@ -154,22 +176,22 @@ def main():
                 try:
                     action, data = next(state["algorithm_generator"])
                     if action == "process":
-                        x, y = data
-                        pygame.draw.rect(screen, (0, 0, 255), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                        state["current_node"] = data  # Track the current node
                     elif action == "visit":
-                        x, y = data
-                        pygame.draw.rect(screen, (255, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                        state["visited_nodes"].add(data)  # Track visited nodes
                     elif action == "path":
                         for x, y in data:
                             pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-                        state["solved_path"] = data 
                     elif action == "no_path":
                         print("No solution found.")
                 except StopIteration:
-                    if state["repeat"]:
-                        state["algorithm_generator"] = create_generator()
-                    else:
-                        state["started"] = False
+                    state["started"] = False  # Stop the algorithm after completion
+
+            # Ensure the solution path is always drawn after the algorithm completes
+            if not state["started"] and state["solution_path"]:
+                for x, y in state["solution_path"]:
+                    pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
 
             if state["solved_path"]:
                 for x, y in state["solved_path"]:
