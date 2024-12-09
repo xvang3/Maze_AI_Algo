@@ -26,15 +26,32 @@ def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
 
     # Define button actions
     def start_action():
+        if state["started"]:  # Ignore clicks if already running
+            return
         state["started"] = True
+        state["state_label"] = "Running"
         if "create_generator" in state:
             state["algorithm_generator"] = state["create_generator"]()  # Create a fresh generator
 
+
+
     def pause_action():
-        state["paused"] = not state["paused"]
+        if state["started"]:
+            state["paused"] = not state["paused"]
+            state["state_label"] = "Paused" if state["paused"] else "Running"
 
     def stop_action():
-        state["started"] = False
+        if not state["stop_clicked"]:
+            state["started"] = False
+            state["state_label"] = "Stopped"
+            state["stop_clicked"] = True
+        else:
+            state["current_node"] = None
+            state["visited_nodes"].clear()
+            state["solution_path"] = []
+            state["state_label"] = "Reset"
+            state["stop_clicked"] = False
+
 
     def new_maze_action():
         state["maze"] = generate_random_maze_with_solution(rows, cols, wall_density=0.3)
@@ -115,6 +132,12 @@ def draw_controls(screen, controls, state, font):
 
     # Draw buttons
     for button in controls["buttons"]:
+        if button.text == "Start" and state["started"]:
+            button.color = (169, 169, 169)  # Gray for disabled
+        elif button.text == "Pause/Resume" and not state["started"]:
+            button.color = (169, 169, 169)  # Gray for disabled
+        else:
+            button.color = button.default_color  # Reset to default
         button.draw(screen, font)
 
     # Draw slider
@@ -139,6 +162,13 @@ def draw_controls(screen, controls, state, font):
     slider_instructions = font.render("Adjust slider to change speed.", True, (0, 0, 0))
     slider_instructions_y = controls["slider_rect"].y + controls["slider_rect"].height + 10
     screen.blit(slider_instructions, (controls["slider_x"], slider_instructions_y))
+
+    # Display state label
+    state_label_surface = font.render(f"State: {state['state_label']}", True, (0, 0, 0))
+    state_label_x = controls["control_box_rect"].x + 10
+    state_label_y = controls["control_box_rect"].y - 30  # Position above the control box
+    screen.blit(state_label_surface, (state_label_x, state_label_y))
+
 
 
 def handle_slider_event(event, controls, state):

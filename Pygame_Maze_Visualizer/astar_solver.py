@@ -4,26 +4,23 @@ from heapq import heappush, heappop
 def astar_with_visualization_generator(maze, start, goal, cell_size, maze_offset, state):
     """A* search generator for visualization."""
     rows, cols = maze.shape
-    open_set = []  # Priority queue for A* search
-    heappush(open_set, (0, start))  # (f-score, node)
-    g_scores = {start: 0}  # Actual cost from start to this node
+    open_set = []
+    heappush(open_set, (0, start))
+    g_scores = {start: 0}
     visited = set()
     visited.add(start)
     parent = {}
 
-    # Heuristic function: Manhattan distance
     def heuristic(node, goal):
         return abs(node[0] - goal[0]) + abs(node[1] - goal[1])
 
     while open_set:
         _, current = heappop(open_set)
         x, y = current
-
-        # Yield the current node for visualization
         yield ("process", current)
 
         # Dynamic delay
-        pygame.time.delay(state["speed"])
+        pygame.time.delay(max(1, int(state["speed"])))
 
         if current == goal:
             # Reconstruct and visualize the path
@@ -32,7 +29,7 @@ def astar_with_visualization_generator(maze, start, goal, cell_size, maze_offset
                 path.append(current)
                 current = parent[current]
             path.append(start)
-            yield ("path", path[::-1])  # Reverse path for start-to-goal
+            yield ("path", path[::-1])
             return
 
         # Process neighbors
@@ -45,6 +42,6 @@ def astar_with_visualization_generator(maze, start, goal, cell_size, maze_offset
                     f_score = tentative_g_score + heuristic((nx, ny), goal)
                     parent[(nx, ny)] = current
                     heappush(open_set, (f_score, (nx, ny)))
-                    yield ("visit", (nx, ny))  # Yield visited node
+                    yield ("visit", (nx, ny))
 
     yield ("no_path", None)

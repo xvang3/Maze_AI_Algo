@@ -96,12 +96,14 @@ def main():
             "repeat": False,
             "algorithm": selected_algorithm,
             "maze": maze,
-            "in_selection": False,  # Track if returning to selection
+            "in_selection": False,
             "speed": INITIAL_DELAY,
-            "speed_factor": 1.0,  # Default speed factor
-            "current_node": None,  # Track the currently processed node
-            "visited_nodes": set(),  # Track all visited nodes
-            "solution_path": []  # Track the solution path
+            "speed_factor": 1.0,
+            "stop_clicked": False,  # Track Stop button state
+            "current_node": None,  # Track the current processing node
+            "visited_nodes": set(),  # Track visited nodes
+            "solution_path": [],  # Store the solution path
+            "state_label": "Stopped",  # Initial state label
         }
 
 
@@ -130,16 +132,23 @@ def main():
             for row in range(rows):
                 for col in range(cols):
                     x, y = maze_offset[0] + col * CELL_SIZE, maze_offset[1] + row * CELL_SIZE
-                    if (row, col) == state["current_node"]:
-                        pygame.draw.rect(screen, (0, 0, 255), (x, y, CELL_SIZE, CELL_SIZE))  # Blue for current node
-                    elif (row, col) in state["visited_nodes"]:
-                        pygame.draw.rect(screen, (255, 255, 0), (x, y, CELL_SIZE, CELL_SIZE))  # Yellow for visited nodes
-                    elif "solution_path" in state and (row, col) in state["solution_path"]:
-                        pygame.draw.rect(screen, (0, 255, 0), (x, y, CELL_SIZE, CELL_SIZE))  # Green for solution path
-                    else:
-                        color = (0, 0, 0) if state["maze"][row, col] == 1 else (255, 255, 255)
-                        pygame.draw.rect(screen, color, (x, y, CELL_SIZE, CELL_SIZE))
+                    color = (0, 0, 0) if state["maze"][row, col] == 1 else (255, 255, 255)
+                    pygame.draw.rect(screen, color, (x, y, CELL_SIZE, CELL_SIZE))
                     pygame.draw.rect(screen, (200, 200, 200), (x, y, CELL_SIZE, CELL_SIZE), 1)
+
+            # Clear visualization when "Stop" is clicked twice
+            if not state["stop_clicked"]:
+                # Draw visited nodes
+                for x, y in state["visited_nodes"]:
+                    pygame.draw.rect(screen, (255, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                # Draw current node
+                if state["current_node"]:
+                    x, y = state["current_node"]
+                    pygame.draw.rect(screen, (0, 0, 255), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                # Draw solution path
+                for x, y in state["solution_path"]:
+                    pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * CELL_SIZE, maze_offset[1] + x * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
 
 
             # Draw controls
