@@ -163,6 +163,12 @@ def draw_controls(screen, controls, state, font):
     slider_instructions_y = controls["slider_rect"].y + controls["slider_rect"].height + 10
     screen.blit(slider_instructions, (controls["slider_x"], slider_instructions_y))
 
+    # Draw the algorithm label (BFS, DFS, Heuristic, A*)
+    algorithm_label = font.render(f"Algorithm: {state['algorithm']}", True, (0, 0, 0))
+    algorithm_label_x = controls["control_box_rect"].x + 10
+    algorithm_label_y = controls["control_box_rect"].y - 50  # Position above the state label
+    screen.blit(algorithm_label, (algorithm_label_x, algorithm_label_y))
+
     # Display state label
     state_label_surface = font.render(f"State: {state['state_label']}", True, (0, 0, 0))
     state_label_x = controls["control_box_rect"].x + 10
