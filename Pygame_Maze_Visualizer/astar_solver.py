@@ -30,6 +30,7 @@ def astar_with_visualization_generator(maze, start, goal, cell_size, maze_offset
                 current = parent[current]
             path.append(start)
             yield ("path", path[::-1])
+            state["solution_path"] = path[::-1]  # Save the solution path
             return
 
         # Process neighbors
