@@ -85,43 +85,33 @@ def is_connected(maze, start, end, rows, cols):
 
     return False
 
-def generate_random_maze_with_solution(rows, cols, wall_density=0.3):
+def generate_random_maze_with_solution(rows, cols): #removed wall_density=0.3
     """Generates a maze with a guaranteed solution path."""
-    maze = generate_maze_with_prims(rows, cols)
+    while True:
+        maze = generate_maze_with_prims(rows, cols)
 
-    # Ensure the start and end positions are open 
-    maze[0, 0] = 0
-    maze[rows-1, cols-1] = 0
+        # Ensure the start and end positions are open
+        maze[0, 0] = 0
+        maze[rows-1, cols-1] = 0
 
-    # Create a guaranteed solution path
-    x, y = 0, 0
-    while (x, y) != (rows - 1, cols - 1):
-        if random.random() > 0.5 and x + 1 < rows:
-            x += 1
-        elif y + 1 < cols:
-            y += 1
-        maze[x, y] = 0
+        # Creates a guaranteed solution path
+        x, y = 0, 0
+        while (x, y) != (rows - 1, cols - 1):
+            if random.random() > 0.5 and x + 1 < rows:
+                x += 1
+            elif y + 1 < cols:
+                y += 1
+            maze[x, y] = 0
 
-    # Ensure no two consecutive rows are completely walls or completely open
-    for i in range(1, rows):
-        if np.all(maze[i] == 1) and np.all(maze[i-1] == 1):  # If both rows are walls
-            maze[i] = np.zeros(cols, dtype=int)
-        elif np.all(maze[i] == 0) and np.all(maze[i-1] == 0):  # If both rows are open space
-            maze[i] = np.ones(cols, dtype=int)
+        maze = ensure_no_double_open_or_walls(maze, rows, cols)
 
-    maze = ensure_no_double_open_or_walls(maze, rows, cols)
-
-    # Ensure the maze remains solvable after modification
-    if not is_connected(maze, (0, 0), (rows - 1, cols - 1), rows, cols):
-
-        # Debugging: output to console:
-        print("Maze is unsolvable after modification. Rerunning maze generation.")
-
-        return generate_random_maze_with_solution(rows, cols, wall_density)  # Recursively retry
+        if is_connected(maze, (0, 0), (rows - 1, cols - 1), rows, cols):
+            break  # Ensures the maze is solvable
 
     # Debugging: Print the generated maze to the console
-    print("Generated Maze (solution):")
+    print("Generated Maze (solution guaranteed):")
     for row in maze:
         print(" ".join(map(str, row)))
 
     return maze
+

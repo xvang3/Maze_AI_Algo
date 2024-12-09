@@ -84,14 +84,14 @@ def main():
 
         # Maze setup
         rows, cols = 11, 11
-        maze = generate_random_maze_with_solution(rows, cols, wall_density=0.3)
+        maze = generate_random_maze_with_solution(rows, cols) #removed wall_density=0.3
         maze_offset = (10, 10)
         maze_width = int(SCREEN_WIDTH * 0.8)
 
-        # Debugging: Print the generated maze to the console
-        print("Generated Maze (used in UI):")
-        for row in maze:
-            print(" ".join(map(str, row)))
+        # # Debugging: Print the generated maze to the console
+        # print("Generated Maze (used in UI):")
+        # for row in maze:
+        #     print(" ".join(map(str, row)))
 
         # Shared state object
         state = {
