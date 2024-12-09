@@ -8,7 +8,7 @@ from controls import draw_controls, init_controls, handle_slider_event
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, CELL_SIZE, INITIAL_DELAY, SLIDER_MIN, SLIDER_MAX
 
 def handle_slider_event(event, controls, shared_state):
-    """Handle slider events to adjust the speed factor."""
+    """Handle slider events to adjust the speed factor dynamically."""
     if event.type == pygame.MOUSEBUTTONDOWN:
         if controls["slider_rect"].collidepoint(event.pos):
             controls["slider_dragging"] = True
@@ -20,11 +20,14 @@ def handle_slider_event(event, controls, shared_state):
             min(event.pos[0], controls["slider_x"] + controls["slider_width"])
         )
         slider_fraction = (controls["slider_knob_x"] - controls["slider_x"]) / controls["slider_width"]
-        shared_state["speed_factor"] = round(SLIDER_MIN + slider_fraction * (SLIDER_MAX - SLIDER_MIN), 1)
+
+        # Map to an effective multiplier range (e.g., 0.1x to 5.0x)
+        shared_state["speed_factor"] = max(0.1, round(0.1 + slider_fraction * 4.9, 2))
+
         # Debugging Output
-        print(f"Speed Factor Updated: {shared_state['speed_factor']}"
-        )
-        
+        print(f"Speed Factor Updated: {shared_state['speed_factor']}")
+
+
 def new_maze_action(shared_state, states, generators, algorithms, maze, offsets, effective_cell_size):
     """Generate a new maze and reset states and generators."""
     maze[:] = generate_random_maze_with_solution(len(maze), len(maze[0]), wall_density=0.3)
@@ -38,13 +41,10 @@ def new_maze_action(shared_state, states, generators, algorithms, maze, offsets,
         )
     shared_state["new_maze_clicked"] = False
 
-
 def back_action(shared_state):
     """Return to the algorithm selection screen."""
     shared_state["running"] = False
     shared_state["in_selection"] = True
-
-
 
 def initialize_algorithms(maze, offsets, effective_cell_size, shared_state):
     """Initialize states and generators for all algorithms."""
@@ -69,6 +69,7 @@ def initialize_algorithms(maze, offsets, effective_cell_size, shared_state):
             "solution_path": [],
             "speed": INITIAL_DELAY,
             "speed_factor": shared_state["speed_factor"],
+            "time_accumulated": 0.0,  # NEW: Track elapsed time for frame-based updates
         }
         states[name] = state
         generators[name] = generator(
@@ -112,30 +113,25 @@ def draw_all_mazes(screen, states, offsets, effective_cell_size, font):
                                                    maze_offset[1] + x * effective_cell_size,
                                                    effective_cell_size, effective_cell_size))
 
-
-def update_algorithms(states, generators, shared_state):
-    """Update the algorithms based on their states."""
-    # print(f"Shared Speed Factor: {shared_state['speed_factor']}")  # Debugging
+def update_algorithms(states, generators, shared_state, frame_time):
+    """Update the algorithms based on their states and the elapsed frame time."""
     for name, generator in generators.items():
         state = states[name]
         if state["started"] and not state["paused"]:
             try:
-                # Apply delay based on speed factor
-                print(f"Before applying delay for {name}: Shared Speed Factor = {shared_state['speed_factor']}, State Speed Factor = {state['speed_factor']}")
-                state["speed_factor"] = shared_state["speed_factor"]  # Ensure synchronization
-                print(f"After synchronization for {name}: State Speed Factor = {state['speed_factor']}")  # Debugging   
+                # Use speed factor to control update frequency
+                elapsed_time = frame_time * shared_state["speed_factor"]
+                state["time_accumulated"] += elapsed_time
 
-                delay_time = int(max(1, int(INITIAL_DELAY / state["speed_factor"])))
-                print(f"Applying delay for {name}: {delay_time} ms")  # Debugging
-                pygame.time.delay(delay_time)
-                print(f"Delay applied for {name}")  # Debugging
-                action, data = next(generator)
-                if action == "process":
-                    state["current_node"] = data
-                elif action == "visit":
-                    state["visited_nodes"].add(data)
-                elif action == "path":
-                    state["solution_path"] = data
+                if state["time_accumulated"] >= INITIAL_DELAY:  # Enough time has passed
+                    state["time_accumulated"] -= INITIAL_DELAY
+                    action, data = next(generator)
+                    if action == "process":
+                        state["current_node"] = data
+                    elif action == "visit":
+                        state["visited_nodes"].add(data)
+                    elif action == "path":
+                        state["solution_path"] = data
             except StopIteration:
                 state["started"] = False
 
@@ -148,7 +144,7 @@ def update_algorithms(states, generators, shared_state):
             state["current_node"] = None
             state["visited_nodes"].clear()
             state["solution_path"].clear()
-
+            state["time_accumulated"] = 0.0  # Reset accumulated time
 
 
 def multi_algo_comparison(screen, font, shared_state):
@@ -188,7 +184,7 @@ def multi_algo_comparison(screen, font, shared_state):
     running = True
 
     while running:
-        #print(f"Shared Speed Factor in Loop: {shared_state['speed_factor']}")  # Debugging
+        frame_time = clock.get_time()  # Get time elapsed since last frame
 
         screen.fill((255, 255, 255))
 
@@ -211,7 +207,7 @@ def multi_algo_comparison(screen, font, shared_state):
             running = False  # Exit loop to return to main selection
 
         # Update algorithms
-        update_algorithms(states, generators, shared_state)
+        update_algorithms(states, generators, shared_state, frame_time)
 
         # Reset generators on stop
         if shared_state["stop_clicked"]:
@@ -223,6 +219,6 @@ def multi_algo_comparison(screen, font, shared_state):
             shared_state["stop_clicked"] = False
 
         pygame.display.flip()
-        clock.tick(30)
+        clock.tick(30)  # Cap the frame rate to 30 FPS
 
     return
