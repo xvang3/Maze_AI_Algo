@@ -27,6 +27,7 @@ def bfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset, 
 
         # Dynamic delay
         pygame.time.delay(max(1, int(state["speed"])))  # Use updated speed from the slider
+        print(f"Applying delay: {state['speed']} ms for bfs")
 
         if current == goal:
             # Reconstruct the solution path

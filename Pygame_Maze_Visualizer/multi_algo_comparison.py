@@ -20,13 +20,20 @@ def handle_slider_event(event, controls, shared_state):
             min(event.pos[0], controls["slider_x"] + controls["slider_width"])
         )
         slider_fraction = (controls["slider_knob_x"] - controls["slider_x"]) / controls["slider_width"]
-
-        # Map to an effective multiplier range (e.g., 0.1x to 5.0x)
         shared_state["speed_factor"] = max(0.1, round(0.1 + slider_fraction * 4.9, 2))
 
-        # Debugging Output
-        print(f"Speed Factor Updated: {shared_state['speed_factor']}")
+def pre_render_maze(maze, effective_cell_size):
+    """Create a surface with the static maze grid pre-rendered."""
+    rows, cols = len(maze), len(maze[0])
+    surface = pygame.Surface((cols * effective_cell_size, rows * effective_cell_size))
 
+    for row in range(rows):
+        for col in range(cols):
+            color = (0, 0, 0) if maze[row][col] == 1 else (255, 255, 255)
+            pygame.draw.rect(surface, color, (col * effective_cell_size, row * effective_cell_size, effective_cell_size, effective_cell_size))
+            pygame.draw.rect(surface, (200, 200, 200), (col * effective_cell_size, row * effective_cell_size, effective_cell_size, effective_cell_size), 1)
+
+    return surface
 
 def new_maze_action(shared_state, states, generators, algorithms, maze, offsets, effective_cell_size):
     """Generate a new maze and reset states and generators."""
@@ -36,6 +43,8 @@ def new_maze_action(shared_state, states, generators, algorithms, maze, offsets,
         states[name]["current_node"] = None
         states[name]["visited_nodes"].clear()
         states[name]["solution_path"].clear()
+        states[name]["cached_grid"] = pre_render_maze(maze, effective_cell_size)
+        states[name]["drawn_nodes"].clear()
         generators[name] = generator(
             states[name]["maze"], (0, 0), (len(maze) - 1, len(maze[0]) - 1), effective_cell_size, offsets[idx], states[name]
         )
@@ -67,9 +76,11 @@ def initialize_algorithms(maze, offsets, effective_cell_size, shared_state):
             "current_node": None,
             "visited_nodes": set(),
             "solution_path": [],
-            "speed": INITIAL_DELAY,
+            "speed": INITIAL_DELAY,  # Reintroduced speed key
             "speed_factor": shared_state["speed_factor"],
-            "time_accumulated": 0.0,  # NEW: Track elapsed time for frame-based updates
+            "time_accumulated": 0.0,  # For time-based updates
+            "cached_grid": pre_render_maze(maze, effective_cell_size),  # Pre-render maze grid
+            "drawn_nodes": set(),  # Cache for dynamically updated nodes
         }
         states[name] = state
         generators[name] = generator(
@@ -83,55 +94,43 @@ def draw_all_mazes(screen, states, offsets, effective_cell_size, font):
     """Draw all mazes and their labels."""
     for idx, (name, state) in enumerate(states.items()):
         maze_offset = offsets[idx]
-
-        # Draw label
         label_surface = font.render(name, True, (0, 0, 0))
         label_rect = label_surface.get_rect(center=(maze_offset[0] + len(state["maze"][0]) * effective_cell_size // 2, maze_offset[1] - 15))
         screen.blit(label_surface, label_rect)
+        screen.blit(state["cached_grid"], maze_offset)
 
-        # Draw maze grid and nodes
-        for row in range(len(state["maze"])):
-            for col in range(len(state["maze"][0])):
-                x = maze_offset[0] + col * effective_cell_size
-                y = maze_offset[1] + row * effective_cell_size
-                color = (0, 0, 0) if state["maze"][row][col] == 1 else (255, 255, 255)
-                pygame.draw.rect(screen, color, (x, y, effective_cell_size, effective_cell_size))
-                pygame.draw.rect(screen, (200, 200, 200), (x, y, effective_cell_size, effective_cell_size), 1)
-
-        # Draw visited nodes, current node, and solution path
         for x, y in state["visited_nodes"]:
-            pygame.draw.rect(screen, (255, 255, 0), (maze_offset[0] + y * effective_cell_size,
-                                                     maze_offset[1] + x * effective_cell_size,
-                                                     effective_cell_size, effective_cell_size))
-        if state["current_node"]:
-            x, y = state["current_node"]
-            pygame.draw.rect(screen, (0, 0, 255), (maze_offset[0] + y * effective_cell_size,
-                                                   maze_offset[1] + x * effective_cell_size,
-                                                   effective_cell_size, effective_cell_size))
+            pygame.draw.rect(screen, (255, 255, 0), (maze_offset[0] + y * effective_cell_size, maze_offset[1] + x * effective_cell_size, effective_cell_size, effective_cell_size))
         for x, y in state["solution_path"]:
-            pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * effective_cell_size,
-                                                   maze_offset[1] + x * effective_cell_size,
-                                                   effective_cell_size, effective_cell_size))
+            pygame.draw.rect(screen, (0, 255, 0), (maze_offset[0] + y * effective_cell_size, maze_offset[1] + x * effective_cell_size, effective_cell_size, effective_cell_size))
+        for x, y in state["drawn_nodes"]:
+            pygame.draw.rect(screen, (0, 0, 255), (maze_offset[0] + y * effective_cell_size, maze_offset[1] + x * effective_cell_size, effective_cell_size, effective_cell_size))
 
 def update_algorithms(states, generators, shared_state, frame_time):
-    """Update the algorithms based on their states and the elapsed frame time."""
+    """Update the algorithms and track dynamically updated nodes."""
     for name, generator in generators.items():
         state = states[name]
+        
+        # Synchronize speed with shared_state
+        state["speed"] = INITIAL_DELAY / shared_state["speed_factor"]  # Dynamic speed adjustment
+        
         if state["started"] and not state["paused"]:
             try:
-                # Use speed factor to control update frequency
-                elapsed_time = frame_time * shared_state["speed_factor"]
-                state["time_accumulated"] += elapsed_time
-
-                if state["time_accumulated"] >= INITIAL_DELAY:  # Enough time has passed
-                    state["time_accumulated"] -= INITIAL_DELAY
+                # Time-based delay
+                state["time_accumulated"] += frame_time
+                if state["time_accumulated"] >= state["speed"]:
                     action, data = next(generator)
                     if action == "process":
                         state["current_node"] = data
+                        state["drawn_nodes"].clear()
+                        state["drawn_nodes"].add(data)
                     elif action == "visit":
                         state["visited_nodes"].add(data)
+                        state["drawn_nodes"].add(data)
                     elif action == "path":
                         state["solution_path"] = data
+                        state["drawn_nodes"].update(data)
+                    state["time_accumulated"] -= state["speed"]
             except StopIteration:
                 state["started"] = False
 
@@ -144,7 +143,7 @@ def update_algorithms(states, generators, shared_state, frame_time):
             state["current_node"] = None
             state["visited_nodes"].clear()
             state["solution_path"].clear()
-            state["time_accumulated"] = 0.0  # Reset accumulated time
+            state["drawn_nodes"].clear()
 
 
 def multi_algo_comparison(screen, font, shared_state):
@@ -153,26 +152,14 @@ def multi_algo_comparison(screen, font, shared_state):
     margin = 20
     vertical_padding = 30
 
-    # Calculate effective cell size and maze dimensions
     available_width = SCREEN_WIDTH - margin * 5
     effective_cell_size = min(available_width // (cols * 4), CELL_SIZE)
-    maze_width = effective_cell_size * cols
-
-    # Generate initial maze
     maze = generate_random_maze_with_solution(rows, cols, wall_density=0.3)
+    offsets = [(margin + (effective_cell_size * cols + margin) * i, vertical_padding) for i in range(4)]
 
-    # Determine maze offsets
-    offsets = [(margin + (maze_width + margin) * i, vertical_padding + 30) for i in range(4)]
-
-    # Initialize algorithms, states, and generators
     algorithms, states, generators = initialize_algorithms(maze, offsets, effective_cell_size, shared_state)
+    controls = init_controls(SCREEN_WIDTH, rows, cols, shared_state, offset_x=20, offset_y=SCREEN_HEIGHT - 150)
 
-    # Initialize control panel
-    controls = init_controls(
-        SCREEN_WIDTH, rows, cols, shared_state, offset_x=20, offset_y=SCREEN_HEIGHT - 150
-    )
-
-    # Attach shared actions to buttons
     for button in controls["buttons"]:
         if button.text == "New Maze":
             button.action = lambda: new_maze_action(shared_state, states, generators, algorithms, maze, offsets, effective_cell_size)
@@ -184,15 +171,11 @@ def multi_algo_comparison(screen, font, shared_state):
     running = True
 
     while running:
-        frame_time = clock.get_time()  # Get time elapsed since last frame
-
+        frame_time = clock.get_time()
         screen.fill((255, 255, 255))
-
-        # Draw all mazes and control panel
-        draw_all_mazes(screen, states, offsets, effective_cell_size, label_font)
+        draw_all_mazes(screen, states, offsets, effective_cell_size, font)
         draw_controls(screen, controls, shared_state, font)
 
-        # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -202,14 +185,11 @@ def multi_algo_comparison(screen, font, shared_state):
             for button in controls["buttons"]:
                 button.handle_event(event)
 
-        # Check if Back button was clicked to return to selection
         if shared_state.get("in_selection"):
-            running = False  # Exit loop to return to main selection
+            running = False
 
-        # Update algorithms
         update_algorithms(states, generators, shared_state, frame_time)
 
-        # Reset generators on stop
         if shared_state["stop_clicked"]:
             for idx, (name, generator) in enumerate(algorithms.items()):
                 states[name]["maze"] = maze.copy()
@@ -219,6 +199,6 @@ def multi_algo_comparison(screen, font, shared_state):
             shared_state["stop_clicked"] = False
 
         pygame.display.flip()
-        clock.tick(30)  # Cap the frame rate to 30 FPS
+        clock.tick(30)
 
     return
