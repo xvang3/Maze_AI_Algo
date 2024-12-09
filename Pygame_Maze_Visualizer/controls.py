@@ -69,9 +69,11 @@ def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
         controls["slider_knob_x"] = controls["slider_x"] + (SLIDER_WIDTH // 2)  # Center knob visually
         state["speed"] = int(INITIAL_DELAY / state["speed_factor"])  # Reset the speed factor
 
-    def back_action():
-        state["in_selection"] = True  # Set flag to re-enter algorithm selection
-        state["running"] = False  # Break the main loop to return
+    def back_action(state):
+        state["in_selection"] = True  # Set in_selection to True to return to the selection menu
+        state["running"] = False      # Stop the current loop
+
+
 
     def x2_speed_action():
         state["speed_factor"] = min(SLIDER_MAX, state["speed_factor"] * 2)  # Double the speed
@@ -102,7 +104,7 @@ def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
         Button(button_x, button_y + button_spacing * 2, button_width, button_height, "Stop", (220, 20, 60), (255, 255, 255), stop_action),
         Button(button_x, button_y + button_spacing * 3, button_width, button_height, "New Maze", (65, 105, 225), (255, 255, 255), new_maze_action),
         Button(button_x + 120, button_y, button_width, button_height, "Reset Speed", (255, 215, 0), (0, 0, 0), reset_speed_action),
-        Button(button_x + 120, button_y + button_spacing, button_width, button_height, "Back", (255, 140, 0), (0, 0, 0), back_action),
+        Button(button_x + 120, button_y + button_spacing, button_width, button_height, "Back", (255, 140, 0), (0, 0, 0), lambda: back_action(state)),        
         Button(slider_x + SLIDER_WIDTH + 20, slider_y, 40, SLIDER_HEIGHT, "÷2", (112, 128, 144), (255, 255, 255), divide2_speed_action),
         Button(slider_x + SLIDER_WIDTH + 70, slider_y, 40, SLIDER_HEIGHT, "x2", (112, 128, 144), (255, 255, 255), x2_speed_action),
     ]

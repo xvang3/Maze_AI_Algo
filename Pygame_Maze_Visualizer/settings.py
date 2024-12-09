@@ -31,3 +31,7 @@ INITIAL_DELAY = 100
 CONTROL_PANEL_WIDTH = 200
 CONTROL_AREA_WIDTH = 300
 CONTROL_MARGIN = 20
+
+# Slider dimensions
+SLIDER_MIN = 0.1  # Minimum speed factor
+SLIDER_MAX = 50.0  # Maximum speed factor

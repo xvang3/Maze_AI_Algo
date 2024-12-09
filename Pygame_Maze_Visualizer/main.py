@@ -154,6 +154,9 @@ def main():
 
         # Main loop
         while state["running"]:
+            if state.get("in_selection"):
+                break  # Exit to restart the selection loop
+            
             screen.fill((255, 255, 255))
 
             # Draw maze
