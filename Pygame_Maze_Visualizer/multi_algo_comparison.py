@@ -1,7 +1,7 @@
 import pygame
 from bfs_solver import bfs_with_visualization_generator
 from dfs_solver import dfs_with_visualization_generator
-from heuristic_solver import heuristic_with_visualization_generator
+from greedy_solver import greedy_with_visualization_generator
 from astar_solver import astar_with_visualization_generator
 from maze_generator import generate_random_maze_with_solution
 from controls import draw_controls, init_controls, handle_slider_event
@@ -60,7 +60,7 @@ def initialize_algorithms(maze, offsets, effective_cell_size, shared_state):
     algorithms = {
         "BFS": bfs_with_visualization_generator,
         "DFS": dfs_with_visualization_generator,
-        "Heuristic": heuristic_with_visualization_generator,
+        "Greedy": greedy_with_visualization_generator,
         "A*": astar_with_visualization_generator,
     }
 

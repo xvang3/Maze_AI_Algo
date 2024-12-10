@@ -1,7 +1,7 @@
 import pygame
 from heapq import heappush, heappop
 
-def heuristic_with_visualization_generator(maze, start, goal, cell_size, maze_offset, state):
+def greedy_with_visualization_generator(maze, start, goal, cell_size, maze_offset, state):
     """Heuristic search generator for visualization."""
     rows, cols = maze.shape
     open_set = []

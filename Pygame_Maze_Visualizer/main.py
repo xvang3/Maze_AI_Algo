@@ -2,7 +2,7 @@ import pygame
 from maze_generator import generate_random_maze_with_solution
 from bfs_solver import bfs_with_visualization_generator
 from dfs_solver import dfs_with_visualization_generator
-from heuristic_solver import heuristic_with_visualization_generator
+from greedy_solver import greedy_with_visualization_generator
 from astar_solver import astar_with_visualization_generator
 from controls import draw_controls, init_controls, handle_slider_event
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, CELL_SIZE, INITIAL_DELAY
@@ -14,7 +14,7 @@ def select_algorithm(screen, font):
     background_image = pygame.image.load(background_path)
     background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
-    algorithms = ["BFS", "DFS", "Heuristic", "A*", "Comparison"]
+    algorithms = ["BFS", "DFS", "Greedy", "A*", "Comparison"]
     buttons = []
     for i, algo in enumerate(algorithms):
         button = pygame.Rect(SCREEN_WIDTH // 2 - 100, 200 + i * 60, 200, 50)
@@ -146,8 +146,8 @@ def main():
                 return bfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
             elif state["algorithm"] == "DFS":
                 return dfs_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
-            elif state["algorithm"] == "Heuristic":
-                return heuristic_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
+            elif state["algorithm"] == "Greedy":
+                return greedy_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
             elif state["algorithm"] == "A*":
                 return astar_with_visualization_generator(state["maze"], (0, 0), (rows - 1, cols - 1), CELL_SIZE, maze_offset, state)
 
