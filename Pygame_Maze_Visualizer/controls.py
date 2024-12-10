@@ -54,7 +54,7 @@ def init_controls(maze_width, rows, cols, state, offset_x=0, offset_y=0):
 
 
     def new_maze_action():
-        state["maze"] = generate_random_maze_with_solution(rows, cols, wall_density=0.3)
+        state["maze"] = generate_random_maze_with_solution(rows, cols) #removed wall_density=0.3
         state["started"] = False
         state["current_node"] = None
         state["visited_nodes"] = set()
