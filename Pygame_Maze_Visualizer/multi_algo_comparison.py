@@ -37,7 +37,7 @@ def pre_render_maze(maze, effective_cell_size):
 
 def new_maze_action(shared_state, states, generators, algorithms, maze, offsets, effective_cell_size):
     """Generate a new maze and reset states and generators."""
-    maze[:] = generate_random_maze_with_solution(len(maze), len(maze[0]), wall_density=0.3)
+    maze[:] = generate_random_maze_with_solution(len(maze), len(maze[0]))
     for idx, (name, generator) in enumerate(algorithms.items()):
         states[name]["maze"] = maze.copy()
         states[name]["current_node"] = None

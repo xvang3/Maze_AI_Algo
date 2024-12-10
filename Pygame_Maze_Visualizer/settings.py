@@ -6,7 +6,7 @@ def get_screen_dimensions():
     info = pygame.display.Info()
     SCREEN_WIDTH = info.current_w
     SCREEN_HEIGHT = info.current_h
-    print(f"Screen dimensions: {SCREEN_WIDTH} x {SCREEN_HEIGHT}")
+    # print(f"Screen dimensions: {SCREEN_WIDTH} x {SCREEN_HEIGHT}")
     return SCREEN_WIDTH, SCREEN_HEIGHT
 
 
@@ -15,7 +15,7 @@ def calculate_cell_size(screen_width, screen_height, maze_width=10, maze_height=
     cell_size_width = screen_width // maze_width
     cell_size_height = screen_height // maze_height
     cell_size = min(cell_size_width, cell_size_height)
-    print(f"Cell size: {cell_size}")
+    # print(f"Cell size: {cell_size}")
     return cell_size
 
 # Get the screen dimensions

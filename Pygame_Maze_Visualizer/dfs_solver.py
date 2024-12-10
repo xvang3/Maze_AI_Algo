@@ -15,7 +15,7 @@ def dfs_with_visualization_generator(maze, start, goal, cell_size, maze_offset, 
 
         # Dynamic delay
         pygame.time.delay(max(1, int(state["speed"])))
-        print(f"Applying delay: {state['speed']} ms for dfs")
+        # print(f"Applying delay: {state['speed']} ms for dfs")
 
         if current == goal:
             # Reconstruct and visualize the path

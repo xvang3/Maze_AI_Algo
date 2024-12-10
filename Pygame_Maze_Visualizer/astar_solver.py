@@ -21,7 +21,7 @@ def astar_with_visualization_generator(maze, start, goal, cell_size, maze_offset
 
         # Dynamic delay
         pygame.time.delay(max(1, int(state["speed"])))
-        print(f"Applying delay: {state['speed']} ms for astar")
+        # print(f"Applying delay: {state['speed']} ms for astar")
 
         if current == goal:
             # Reconstruct and visualize the path

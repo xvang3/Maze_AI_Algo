@@ -85,7 +85,7 @@ def is_connected(maze, start, end, rows, cols):
 
     return False
 
-def generate_random_maze_with_solution(rows, cols): #removed wall_density=0.3
+def generate_random_maze_with_solution(rows, cols, wall_density=0.3):
     """Generates a maze with a guaranteed solution path."""
     while True:
         maze = generate_maze_with_prims(rows, cols)
@@ -109,9 +109,9 @@ def generate_random_maze_with_solution(rows, cols): #removed wall_density=0.3
             break  # Ensures the maze is solvable
 
     # Debugging: Print the generated maze to the console
-    print("Generated Maze (solution guaranteed):")
-    for row in maze:
-        print(" ".join(map(str, row)))
+    # print("Generated Maze (solution guaranteed):")
+    # for row in maze:
+    #   print(" ".join(map(str, row)))
 
     return maze
 
